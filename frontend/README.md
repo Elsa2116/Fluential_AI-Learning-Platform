@@ -1,13 +1,34 @@
-# Frontend (Next.js Structure)
+# Frontend (Next.js)
 
-This folder is scaffolded for Next.js-style development.
+This is a Next.js App Router frontend for the AI learning platform.
 
-## Rule for now
+## Run locally
 
-- Only `src/main.jsx` and `src/App.jsx` contain code.
-- Other files are placeholders/folder structure only.
+1. Install dependencies
 
-## Current purpose
+```bash
+npm install
+```
 
-- Let the frontend team start with an agreed folder layout.
-- Keep implementation minimal until team members begin their parts.
+2. Create env file
+
+```bash
+cp .env.example .env.local
+```
+
+3. Start dev server
+
+```bash
+npm run dev
+```
+
+App runs at `http://localhost:3000`.
+
+## Pages
+
+- `/` home
+- `/dashboard` backend health + overview
+- `/lessons` lesson list
+- `/ai-tutor` AI hint form
+- `/progress` progress summary + recommendation
+- `/quiz` short assessment

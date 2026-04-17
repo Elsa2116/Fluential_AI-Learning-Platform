@@ -1,8 +1,10 @@
 export default function App() {
   return (
-    <main>
+    <>
       <h1>AI Learning Platform</h1>
-      <p>Frontend scaffold ready (Next.js structure).</p>
-    </main>
+      <p className="muted">
+        Learn faster with lessons, quizzes, and AI-powered hints.
+      </p>
+    </>
   );
 }
