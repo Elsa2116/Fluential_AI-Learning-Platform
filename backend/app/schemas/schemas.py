@@ -3,7 +3,9 @@ from pydantic import BaseModel, EmailStr, Field
 
 
 class RegisterRequest(BaseModel):
-    full_name: str = Field(min_length=2, max_length=150)
+    full_name: str | None = Field(default=None, min_length=2, max_length=150)
+    name: str | None = Field(default=None, min_length=2, max_length=150)
+    fullName: str | None = Field(default=None, min_length=2, max_length=150)
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
     country: str = Field(default="international", min_length=2, max_length=80)

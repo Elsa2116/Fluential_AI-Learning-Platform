@@ -1,6 +1,7 @@
 from jose import JWTError
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
@@ -47,6 +48,10 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 
 @router.post("/register", response_model=AuthTokenResponse)
 def register(payload: RegisterRequest, db: Session = Depends(get_db)):
+    full_name = (payload.full_name or payload.name or payload.fullName or "").strip()
+    if len(full_name) < 2:
+        raise HTTPException(status_code=422, detail="full_name (or name) is required")
+
     normalized_email = _normalize_email(payload.email)
     normalized_role = payload.role.strip().lower()
     if normalized_role not in ALLOWED_ROLES:
@@ -57,15 +62,19 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Email already registered")
 
     user = User(
-        full_name=payload.full_name.strip(),
+        full_name=full_name,
         email=normalized_email,
         hashed_password=hash_password(payload.password),
         country=payload.country.strip(),
         role=normalized_role,
     )
     db.add(user)
-    db.commit()
-    db.refresh(user)
+    try:
+        db.commit()
+        db.refresh(user)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Email already registered")
     token = create_access_token(user.id, user.email, user.role)
     return {"access_token": token, "token_type": "bearer", "user": _serialize_user(user)}
 
