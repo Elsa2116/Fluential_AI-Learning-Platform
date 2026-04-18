@@ -27,8 +27,20 @@ App runs at `http://localhost:3000`.
 ## Pages
 
 - `/` home
-- `/dashboard` backend health + overview
-- `/lessons` lesson list
-- `/ai-tutor` AI hint form
+- `/login` login page
+- `/register` register page
+- `/dashboard` learning overview
+- `/courses` course catalog + AI summary/quiz generation
+- `/chat` AI chat page
+- `/ai-tutor` AI tutor page
 - `/progress` progress summary + recommendation
 - `/quiz` short assessment
+
+## Integrated Features
+
+- User authentication UI (login/register)
+- Course listing from API
+- AI tutor/chat interaction
+- Personalized recommendations
+- Lesson summarization UI
+- Dynamic quiz generation UI

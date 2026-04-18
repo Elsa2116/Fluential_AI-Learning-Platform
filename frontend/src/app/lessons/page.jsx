@@ -1,33 +1,19 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import LessonCard from "@/components/LessonCard";
-import { fetchLessons } from "@/lib/api-client";
+import Link from "next/link";
 
 export default function LessonsPage() {
-  const [lessons, setLessons] = useState([]);
-
-  useEffect(() => {
-    fetchLessons()
-      .then(setLessons)
-      .catch(() => setLessons([]));
-  }, []);
-
   return (
-    <section>
-      <h2>Lessons</h2>
+    <section className="card">
+      <h2>Lessons moved to Courses</h2>
       <p className="muted">
-        Start with fundamentals, then move to advanced topics.
+        Use the Courses page to view content, summaries, and generated quizzes.
       </p>
-      <div className="grid">
-        {lessons.length === 0 ? (
-          <p className="card">No lessons available yet.</p>
-        ) : (
-          lessons.map((lesson) => (
-            <LessonCard key={lesson.id} lesson={lesson} />
-          ))
-        )}
-      </div>
+      <Link
+        href="/courses"
+        className="button"
+        style={{ display: "inline-block", width: "auto", marginTop: 8 }}
+      >
+        Open Courses
+      </Link>
     </section>
   );
 }
