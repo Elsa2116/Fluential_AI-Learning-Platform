@@ -17,6 +17,17 @@ FastAPI backend for the AI learning platform with:
 
 API base URL: `http://localhost:8000/api/v1`
 
+## Environment variables
+
+Set these in your shell before running:
+
+- `LLM_API_KEY` - API key for your chat model provider
+- `LLM_MODEL` - model name (example: `gpt-4o-mini`)
+- `LLM_BASE_URL` - chat API base URL (example: `https://api.openai.com/v1`)
+- `CHAPA_SECRET_KEY` - Chapa secret key for real checkout and verification
+- `CHAPA_BASE_URL` - defaults to `https://api.chapa.co/v1`
+- `PAYMENT_CALLBACK_BASE_URL` - your backend public URL (example: `http://localhost:8000`)
+
 ## Key endpoints
 
 - Auth: `POST /register`, `POST /login`
@@ -39,6 +50,9 @@ API base URL: `http://localhost:8000/api/v1`
   - `POST /quiz/generate`
 - Payments:
   - `POST /payments/initialize`
+  - `POST /payments/chapa/verify`
+  - `GET /payments/chapa/callback?tx_ref=...`
+  - `GET /payments/{transaction_id}`
   - `POST /payments/{transaction_id}/confirm`
 - Chat:
   - `GET /chat/messages/{room_id}`

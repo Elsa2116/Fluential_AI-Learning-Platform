@@ -122,6 +122,10 @@ class PaymentStatusResponse(BaseModel):
     checkout_url: str
 
 
+class PaymentVerifyRequest(BaseModel):
+    tx_ref: str = Field(min_length=3, max_length=120)
+
+
 class ChatMessageCreate(BaseModel):
     room_id: str
     sender_id: int

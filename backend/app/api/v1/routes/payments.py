@@ -1,3 +1,4 @@
+import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -8,10 +9,42 @@ from app.schemas.schemas import (
     PaymentInitRequest,
     PaymentInitResponse,
     PaymentStatusResponse,
+    PaymentVerifyRequest,
 )
-from app.services.payment import build_checkout_url, provider_for_country, provider_is_configured
+from app.services.payment import (
+    build_checkout_url,
+    chapa_payment_successful,
+    initialize_chapa_checkout,
+    provider_for_country,
+    provider_is_configured,
+    tx_ref_for_transaction,
+    verify_chapa_transaction,
+)
 
 router = APIRouter(tags=["payments"])
+
+
+def _mark_transaction_as_paid(transaction: PaymentTransaction, db: Session) -> None:
+    transaction.status = "paid"
+    enrollment = (
+        db.query(Enrollment)
+        .filter(
+            Enrollment.user_id == transaction.user_id,
+            Enrollment.course_id == transaction.course_id,
+        )
+        .first()
+    )
+    if not enrollment:
+        db.add(Enrollment(user_id=transaction.user_id, course_id=transaction.course_id))
+
+
+def _transaction_by_tx_ref(tx_ref: str, db: Session) -> PaymentTransaction | None:
+    if not tx_ref.startswith("fluential-"):
+        return None
+    transaction_id_part = tx_ref.removeprefix("fluential-")
+    if not transaction_id_part.isdigit():
+        return None
+    return db.query(PaymentTransaction).filter(PaymentTransaction.id == int(transaction_id_part)).first()
 
 
 @router.post("/payments/initialize", response_model=PaymentInitResponse)
@@ -46,7 +79,10 @@ def initialize_payment(payload: PaymentInitRequest, db: Session = Depends(get_db
             "checkout_url": existing_pending.checkout_url,
         }
 
-    checkout_url = "" if provider_is_configured(provider) else build_checkout_url(provider, 0)
+    if provider == "chapa" and not provider_is_configured(provider):
+        raise HTTPException(status_code=503, detail="Chapa is not configured")
+
+    checkout_url = build_checkout_url(provider, 0)
     transaction = PaymentTransaction(
         user_id=user.id,
         course_id=course.id,
@@ -58,7 +94,21 @@ def initialize_payment(payload: PaymentInitRequest, db: Session = Depends(get_db
     db.add(transaction)
     db.flush()
 
-    transaction.checkout_url = build_checkout_url(provider, transaction.id)
+    if provider == "chapa":
+        tx_ref = tx_ref_for_transaction(transaction.id)
+        try:
+            transaction.checkout_url = initialize_chapa_checkout(
+                tx_ref=tx_ref,
+                amount_usd=transaction.amount_usd,
+                email=user.email,
+                full_name=user.full_name,
+                transaction_id=transaction.id,
+            )
+        except (httpx.HTTPError, ValueError):
+            raise HTTPException(status_code=502, detail="Failed to initialize Chapa checkout")
+    else:
+        transaction.checkout_url = build_checkout_url(provider, transaction.id)
+
     db.commit()
     db.refresh(transaction)
 
@@ -101,23 +151,73 @@ def confirm_payment(
             "status": transaction.status,
         }
 
-    transaction.status = "paid" if payload.paid else "failed"
+    if transaction.provider == "chapa":
+        raise HTTPException(
+            status_code=400,
+            detail="Use /payments/chapa/verify or Chapa callback to confirm this transaction",
+        )
 
     if payload.paid:
-        enrollment = (
-            db.query(Enrollment)
-            .filter(
-                Enrollment.user_id == transaction.user_id,
-                Enrollment.course_id == transaction.course_id,
-            )
-            .first()
-        )
-        if not enrollment:
-            db.add(Enrollment(user_id=transaction.user_id, course_id=transaction.course_id))
+        _mark_transaction_as_paid(transaction, db)
+    else:
+        transaction.status = "failed"
 
     db.commit()
     return {
         "message": "Payment confirmation processed in test mode",
         "transaction_id": transaction.id,
         "status": transaction.status,
+    }
+
+
+@router.post("/payments/chapa/verify")
+def verify_chapa_payment(payload: PaymentVerifyRequest, db: Session = Depends(get_db)):
+    transaction = _transaction_by_tx_ref(payload.tx_ref, db)
+    if not transaction:
+        raise HTTPException(status_code=404, detail="Transaction not found for tx_ref")
+    if transaction.provider != "chapa":
+        raise HTTPException(status_code=400, detail="tx_ref does not belong to Chapa transaction")
+
+    try:
+        verification = verify_chapa_transaction(payload.tx_ref)
+    except httpx.HTTPError:
+        raise HTTPException(status_code=502, detail="Failed to verify Chapa transaction")
+
+    if chapa_payment_successful(verification):
+        _mark_transaction_as_paid(transaction, db)
+    else:
+        transaction.status = "failed"
+    db.commit()
+
+    return {
+        "transaction_id": transaction.id,
+        "status": transaction.status,
+        "tx_ref": payload.tx_ref,
+    }
+
+
+@router.get("/payments/chapa/callback")
+def chapa_callback(tx_ref: str, db: Session = Depends(get_db)):
+    transaction = _transaction_by_tx_ref(tx_ref, db)
+    if not transaction:
+        raise HTTPException(status_code=404, detail="Transaction not found for tx_ref")
+    if transaction.provider != "chapa":
+        raise HTTPException(status_code=400, detail="tx_ref does not belong to Chapa transaction")
+
+    try:
+        verification = verify_chapa_transaction(tx_ref)
+    except httpx.HTTPError:
+        raise HTTPException(status_code=502, detail="Failed to verify Chapa transaction")
+
+    if chapa_payment_successful(verification):
+        _mark_transaction_as_paid(transaction, db)
+    else:
+        transaction.status = "failed"
+    db.commit()
+
+    return {
+        "message": "Chapa callback processed",
+        "transaction_id": transaction.id,
+        "status": transaction.status,
+        "tx_ref": tx_ref,
     }
