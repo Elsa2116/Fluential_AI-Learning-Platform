@@ -11,12 +11,31 @@ const CATEGORY_CONFIG = {
   "web-development": {
     label: "Web Development",
     hint: "Frontend, backend, APIs, and modern web frameworks.",
-    keywords: ["web", "frontend", "backend", "react", "next", "javascript", "html", "css", "api"],
+    keywords: [
+      "web",
+      "frontend",
+      "backend",
+      "react",
+      "next",
+      "javascript",
+      "html",
+      "css",
+      "api",
+    ],
   },
   "ai-machine-learning": {
     label: "AI & Machine Learning",
     hint: "AI fundamentals, models, and machine learning workflows.",
-    keywords: ["ai", "machine", "ml", "neural", "model", "llm", "prompt", "intelligence"],
+    keywords: [
+      "ai",
+      "machine",
+      "ml",
+      "neural",
+      "model",
+      "llm",
+      "prompt",
+      "intelligence",
+    ],
   },
   design: {
     label: "Design",
@@ -26,12 +45,28 @@ const CATEGORY_CONFIG = {
   business: {
     label: "Business",
     hint: "Operations, product strategy, and business growth.",
-    keywords: ["business", "marketing", "management", "strategy", "startup", "sales", "finance"],
+    keywords: [
+      "business",
+      "marketing",
+      "management",
+      "strategy",
+      "startup",
+      "sales",
+      "finance",
+    ],
   },
   "data-science": {
     label: "Data Science",
     hint: "Data analysis, statistics, and decision-focused analytics.",
-    keywords: ["data", "analysis", "analytics", "python", "sql", "statistics", "visualization"],
+    keywords: [
+      "data",
+      "analysis",
+      "analytics",
+      "python",
+      "sql",
+      "statistics",
+      "visualization",
+    ],
   },
 };
 
@@ -47,29 +82,28 @@ export default function CoursesPage() {
   const activeCategoryConfig = CATEGORY_CONFIG[activeCategory] || null;
 
   const inferCategoryKey = useMemo(
-    () =>
-      (course) => {
-        const rawText = [course?.title, course?.description, course?.content]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
+    () => (course) => {
+      const rawText = [course?.title, course?.description, course?.content]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
 
-        for (const categoryKey of CATEGORY_KEYS) {
-          const hasKeyword = CATEGORY_CONFIG[categoryKey].keywords.some((keyword) =>
-            rawText.includes(keyword),
-          );
-          if (hasKeyword) {
-            return categoryKey;
-          }
-        }
-
-        const fallbackSeed = `${course?.id ?? ""}${course?.title ?? "course"}`;
-        const hash = Array.from(fallbackSeed).reduce(
-          (accumulator, character) => accumulator + character.charCodeAt(0),
-          0,
+      for (const categoryKey of CATEGORY_KEYS) {
+        const hasKeyword = CATEGORY_CONFIG[categoryKey].keywords.some(
+          (keyword) => rawText.includes(keyword),
         );
-        return CATEGORY_KEYS[hash % CATEGORY_KEYS.length];
-      },
+        if (hasKeyword) {
+          return categoryKey;
+        }
+      }
+
+      const fallbackSeed = `${course?.id ?? ""}${course?.title ?? "course"}`;
+      const hash = Array.from(fallbackSeed).reduce(
+        (accumulator, character) => accumulator + character.charCodeAt(0),
+        0,
+      );
+      return CATEGORY_KEYS[hash % CATEGORY_KEYS.length];
+    },
     [],
   );
 
@@ -110,7 +144,7 @@ export default function CoursesPage() {
           <p className="muted" style={{ marginBottom: 0 }}>
             {activeCategoryConfig
               ? activeCategoryConfig.hint
-                : "Browse your platform catalog with recommendations, filters, and structured course cards."}
+              : "Browse your platform catalog with recommendations, filters, and structured course cards."}
           </p>
         </div>
 
@@ -139,7 +173,11 @@ export default function CoursesPage() {
             Category: {activeCategoryConfig.label}
           </span>
         ) : null}
-        {query ? <span className="course-pill catalog-pill-active">Search: {query}</span> : null}
+        {query ? (
+          <span className="course-pill catalog-pill-active">
+            Search: {query}
+          </span>
+        ) : null}
       </div>
 
       <div className="catalog-layout">

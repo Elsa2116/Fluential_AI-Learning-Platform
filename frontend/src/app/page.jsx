@@ -56,17 +56,20 @@ const learningJourney = [
 const spotlightCards = [
   {
     title: "Hands-on projects",
-    description: "Apply what you learn with practical exercises and mini-builds.",
+    description:
+      "Apply what you learn with practical exercises and mini-builds.",
     stat: "Project-first",
   },
   {
     title: "Career-ready skills",
-    description: "Follow structured tracks aligned with high-demand skill areas.",
+    description:
+      "Follow structured tracks aligned with high-demand skill areas.",
     stat: "Outcome-based",
   },
   {
     title: "Adaptive support",
-    description: "Get recommendations tailored to your performance and activity.",
+    description:
+      "Get recommendations tailored to your performance and activity.",
     stat: "Personalized",
   },
 ];
@@ -160,9 +163,9 @@ export default function HomePage() {
             </article>
             <article className="stat-card">
               <span className="stat-label">Platform style</span>
-                <div className="stat-value">Platform-native</div>
+              <div className="stat-value">Platform-native</div>
               <p className="muted" style={{ marginBottom: 0 }}>
-                  Built for your learning workflow and brand identity.
+                Built for your learning workflow and brand identity.
               </p>
             </article>
           </div>
@@ -226,7 +229,10 @@ export default function HomePage() {
 
         <div className="spotlight-grid">
           {spotlightCards.map((item) => (
-            <article key={item.title} className="spotlight-card card glass-panel">
+            <article
+              key={item.title}
+              className="spotlight-card card glass-panel"
+            >
               <span className="spotlight-stat">{item.stat}</span>
               <h3 style={{ margin: "8px 0" }}>{item.title}</h3>
               <p className="muted" style={{ marginBottom: 0 }}>
