@@ -1,9 +1,14 @@
 # AI Learning Platform (Round 2)
 
+Status: ONGOING  
+Deadline: 2026-04-25
+
 ## Project Structure
 
-- `backend/` — FastAPI backend **folder structure only** (no code yet)
+- `backend/` — FastAPI backend implementation (auth, courses, AI, learning, chat, payments)
 - `frontend/` — Next.js frontend implementation (App Router)
+
+See the full team checklist in `ROUND2_ASSIGNMENT_CHECKLIST.md`.
 
 ## Team Workflow
 

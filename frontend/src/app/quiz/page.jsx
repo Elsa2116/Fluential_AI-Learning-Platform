@@ -30,7 +30,14 @@ export default function QuizPage() {
 
   return (
     <section className="grid" style={{ gap: 16 }}>
-      <h2>Quick Quiz</h2>
+      <div className="page-intro">
+        <span className="page-kicker">Adaptive Checkpoint</span>
+        <h2 style={{ margin: 0 }}>Quick Quiz</h2>
+        <p className="muted" style={{ marginBottom: 0 }}>
+          Lightweight knowledge checks help the platform adapt content and track
+          progress.
+        </p>
+      </div>
       {questions.map((question) => (
         <QuizCard
           key={question.id}
@@ -44,8 +51,8 @@ export default function QuizPage() {
           }
         />
       ))}
-      <article className="card">
-        <strong>
+      <article className="card glass-panel">
+        <strong style={{ fontSize: 18 }}>
           Score: {score.correct}/{score.total}
         </strong>
       </article>

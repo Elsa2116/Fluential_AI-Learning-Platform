@@ -10,57 +10,137 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        <nav className="nav">
-          <div className="nav-left">
-            <Link href="/">Home</Link>
-            <Link href="/dashboard">Dashboard</Link>
-            <Link href="/courses">Courses</Link>
-            <Link href="/chat">AI Chat</Link>
-            <Link href="/ai-tutor">AI Tutor</Link>
-            <Link href="/progress">Progress</Link>
-            <Link href="/quiz">Quiz</Link>
+        <header className="nav">
+          <div className="nav-brand">
+            <span className="nav-mark" aria-hidden="true">
+              <span>AI</span>
+            </span>
+            <div>
+              <Link href="/" className="nav-title">
+                AI Learning Hub
+              </Link>
+              <p className="nav-subtitle">
+                Professional learning with AI guidance
+              </p>
+            </div>
           </div>
+
+          <details className="nav-category-menu">
+            <summary className="nav-category" aria-label="Browse categories">
+              <span className="nav-category-icon">≡</span>
+              Categories
+            </summary>
+            <div className="nav-category-list">
+              <Link href="/courses?category=web-development">
+                Web Development
+              </Link>
+              <Link href="/courses?category=ai-machine-learning">
+                AI &amp; Machine Learning
+              </Link>
+              <Link href="/courses?category=design">Design</Link>
+              <Link href="/courses?category=business">Business</Link>
+              <Link href="/courses?category=data-science">Data Science</Link>
+            </div>
+          </details>
+
+          <form className="nav-search" action="/courses">
+            <span className="nav-search-icon">⌕</span>
+            <input
+              type="search"
+              name="q"
+              placeholder="Search courses, topics, or instructors"
+              aria-label="Search courses"
+            />
+          </form>
+
           <div className="nav-right">
-            <Link href="/login" className="auth-link">
+            <Link href="/dashboard" className="nav-link nav-link-strong">
+              My learning
+            </Link>
+            <Link href="/courses" className="nav-link">
+              Courses
+            </Link>
+            <Link href="/login" className="auth-link auth-link-ghost">
               Login
             </Link>
-            <Link href="/register" className="auth-link">
+            <Link href="/register" className="auth-link auth-link-solid">
               Sign Up
             </Link>
           </div>
-        </nav>
+        </header>
         <main>{children}</main>
         <footer className="footer">
-          <div className="footer-grid">
-            <section>
-              <h4>AI Learning Platform</h4>
-              <p className="muted">
-                Personalized learning with AI tutor, smart recommendations,
-                summaries, and adaptive quizzes.
-              </p>
-            </section>
-            <section>
-              <h4>Navigation</h4>
-              <div className="footer-links">
-                <Link href="/dashboard">Dashboard</Link>
-                <Link href="/courses">Courses</Link>
-                <Link href="/chat">AI Chat</Link>
-                <Link href="/progress">Progress</Link>
+          <div className="footer-top">
+            <div className="footer-brand card glass-panel">
+              <div className="footer-brand-row">
+                <span className="nav-mark footer-mark" aria-hidden="true">
+                  <span>AI</span>
+                </span>
+                <div>
+                  <h4 style={{ margin: 0 }}>AI Learning Hub</h4>
+                  <p className="muted" style={{ margin: "4px 0 0" }}>
+                    A focused learning experience for students, teachers, and
+                    teams.
+                  </p>
+                </div>
               </div>
-            </section>
-            <section>
-              <h4>AI Features</h4>
-              <ul className="list">
-                <li>Virtual AI Tutor</li>
-                <li>Personalized Recommendations</li>
-                <li>Lesson Summarization</li>
-                <li>Dynamic Quiz Generation</li>
-              </ul>
-            </section>
+
+              <p className="footer-brand-note muted">
+                Structured around your backend learning flow: authentication,
+                courses, chat, progress, and AI tools.
+              </p>
+            </div>
+
+            <div className="footer-grid">
+              <section>
+                <h4>Platform</h4>
+                <div className="footer-links">
+                  <Link href="/dashboard">Dashboard</Link>
+                  <Link href="/courses">Courses</Link>
+                  <Link href="/chat">AI Chat</Link>
+                  <Link href="/progress">Progress</Link>
+                </div>
+              </section>
+
+              <section>
+                <h4>Learning</h4>
+                <div className="footer-links">
+                  <Link href="/ai-tutor">AI Tutor</Link>
+                  <Link href="/quiz">Quiz</Link>
+                  <Link href="/login">Login</Link>
+                  <Link href="/register">Sign Up</Link>
+                </div>
+              </section>
+
+              <section>
+                <h4>Support</h4>
+                <div className="footer-links footer-contact">
+                  <span>Phone: 0989928298</span>
+                  <span>Email: elsialemayehu30@gmail.com</span>
+                  <span>Available for project collaboration and support</span>
+                </div>
+              </section>
+            </div>
           </div>
-          <p className="footer-note">
-            © 2026 AI Learning Platform. Built with Next.js + FastAPI.
-          </p>
+
+          <div className="footer-trust-row">
+            <span className="footer-badge">Secure sign-in</span>
+            <span className="footer-badge">Role-based access</span>
+            <span className="footer-badge">FastAPI-ready integration</span>
+            <span className="footer-badge">GitHub collaboration workflow</span>
+          </div>
+
+          <div className="footer-bottom">
+            <p className="footer-note footer-note-left">
+              © 2026 AI Learning Hub.
+            </p>
+            <div className="footer-links footer-links-inline">
+              <Link href="/">Home</Link>
+              <Link href="/courses">Courses</Link>
+              <Link href="/chat">AI Chat</Link>
+              <Link href="/progress">Progress</Link>
+            </div>
+          </div>
         </footer>
       </body>
     </html>

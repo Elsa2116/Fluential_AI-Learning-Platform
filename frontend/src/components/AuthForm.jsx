@@ -5,7 +5,9 @@ import { useState } from "react";
 export default function AuthForm({ type, onSubmit }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [country, setCountry] = useState("international");
+  const [role, setRole] = useState("student");
   const [message, setMessage] = useState("");
 
   const isRegister = type === "register";
@@ -16,10 +18,20 @@ export default function AuthForm({ type, onSubmit }) {
 
     try {
       const payload = isRegister
-        ? { name, email, password }
+        ? {
+            full_name: fullName,
+            email,
+            password,
+            country,
+            role,
+          }
         : { email, password };
 
       const result = await onSubmit(payload);
+      if (result?.access_token) {
+        localStorage.setItem("apl_token", result.access_token);
+        localStorage.setItem("apl_user", JSON.stringify(result.user || {}));
+      }
       setMessage(
         result?.message ||
           `${isRegister ? "Registration" : "Login"} successful.`,
@@ -31,22 +43,70 @@ export default function AuthForm({ type, onSubmit }) {
 
   return (
     <form
-      className="card grid"
+      className="card grid glass-panel auth-card"
       onSubmit={handleSubmit}
-      style={{ gap: 10, maxWidth: 460 }}
+      style={{ gap: 12 }}
     >
-      <h2 style={{ margin: 0 }}>{isRegister ? "Create Account" : "Login"}</h2>
+      <div
+        className="card-header auth-card-header"
+        style={{ alignItems: "flex-start" }}
+      >
+        <div>
+          <span className="page-kicker">
+            {isRegister ? "Create account" : "Sign in"}
+          </span>
+          <h2 style={{ margin: "8px 0 0" }}>
+            {isRegister ? "Start learning" : "Welcome back"}
+          </h2>
+          <p className="muted auth-card-copy">
+            {isRegister
+              ? "Create your learning profile and pick the role that fits you best."
+              : "Use your account to continue your lessons and progress."}
+          </p>
+        </div>
+      </div>
 
       {isRegister ? (
         <label>
           Full Name
           <input
             className="input"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            placeholder="Enter your name"
+            value={fullName}
+            onChange={(event) => setFullName(event.target.value)}
+            placeholder="Full name"
+            autoComplete="name"
             required
           />
+        </label>
+      ) : null}
+
+      {isRegister ? (
+        <label>
+          Country
+          <input
+            className="input"
+            value={country}
+            onChange={(event) => setCountry(event.target.value)}
+            placeholder="Country or region"
+            autoComplete="country-name"
+            required
+          />
+        </label>
+      ) : null}
+
+      {isRegister ? (
+        <label>
+          Role
+          <select
+            className="input"
+            value={role}
+            onChange={(event) => setRole(event.target.value)}
+            required
+          >
+            <option value="student">Student</option>
+            <option value="teacher">Teacher</option>
+            <option value="admin">Admin</option>
+          </select>
         </label>
       ) : null}
 
@@ -58,6 +118,7 @@ export default function AuthForm({ type, onSubmit }) {
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           placeholder="you@example.com"
+          autoComplete="email"
           required
         />
       </label>
@@ -70,16 +131,20 @@ export default function AuthForm({ type, onSubmit }) {
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           placeholder="••••••••"
+          autoComplete={isRegister ? "new-password" : "current-password"}
           required
         />
       </label>
 
       <button className="button" type="submit">
-        {isRegister ? "Register" : "Login"}
+        {isRegister ? "Create account" : "Sign in"}
       </button>
 
       {message ? (
-        <p className="muted" style={{ marginBottom: 0 }}>
+        <p
+          className="muted auth-status"
+          style={{ marginBottom: 0, textAlign: "center" }}
+        >
           {message}
         </p>
       ) : null}

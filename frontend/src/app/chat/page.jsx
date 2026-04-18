@@ -1,13 +1,15 @@
-import AITutorPanel from "@/components/AITutorPanel";
+import ChatRoomPanel from "@/components/ChatRoomPanel";
 
 export default function ChatPage() {
   return (
-    <section>
-      <h2>AI Chat</h2>
-      <p className="muted">
-        Ask course questions and receive virtual tutor guidance.
-      </p>
-      <AITutorPanel />
+    <section className="grid" style={{ gap: 16 }}>
+      <div>
+        <h2>AI Chat</h2>
+        <p className="muted">
+          Talk with learners, send files, and keep the learning room active.
+        </p>
+      </div>
+      <ChatRoomPanel />
     </section>
   );
 }
