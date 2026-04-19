@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function AuthForm({ type, onSubmit }) {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -31,6 +33,8 @@ export default function AuthForm({ type, onSubmit }) {
       if (result?.access_token) {
         localStorage.setItem("apl_token", result.access_token);
         localStorage.setItem("apl_user", JSON.stringify(result.user || {}));
+        router.push("/dashboard");
+        return;
       }
       setMessage(
         result?.message ||
