@@ -169,6 +169,36 @@ export default function AppShell({ children }) {
                   <span>Available for project collaboration and support</span>
                 </div>
               </section>
+
+              <section>
+                <h4>Social</h4>
+                <div className="footer-links">
+                  <a
+                    href="https://www.linkedin.com"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    LinkedIn
+                  </a>
+                  <a href="https://t.me" target="_blank" rel="noreferrer">
+                    Telegram
+                  </a>
+                  <a
+                    href="https://github.com"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    GitHub
+                  </a>
+                  <a
+                    href="https://www.youtube.com"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    YouTube
+                  </a>
+                </div>
+              </section>
             </div>
           </div>
 
