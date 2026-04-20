@@ -183,11 +183,7 @@ export default function AppShell({ children }) {
                   <a href="https://t.me" target="_blank" rel="noreferrer">
                     Telegram
                   </a>
-                  <a
-                    href="https://github.com"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
+                  <a href="https://github.com" target="_blank" rel="noreferrer">
                     GitHub
                   </a>
                   <a
