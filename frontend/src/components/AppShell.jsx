@@ -28,6 +28,19 @@ export default function AppShell({ children }) {
     router.push("/login");
   }
 
+  function handleSearchSubmit(event) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const query = String(formData.get("q") || "").trim();
+
+    if (!query) {
+      router.push("/courses");
+      return;
+    }
+
+    router.push(`/courses?q=${encodeURIComponent(query)}`);
+  }
+
   return (
     <>
       {!isAuthPage ? (
@@ -64,7 +77,11 @@ export default function AppShell({ children }) {
             </div>
           </details>
 
-          <form className="nav-search" action="/courses">
+          <form
+            className="nav-search"
+            action="/courses"
+            onSubmit={handleSearchSubmit}
+          >
             <span className="nav-search-icon">⌕</span>
             <input
               type="search"

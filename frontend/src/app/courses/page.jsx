@@ -222,7 +222,11 @@ export default function CoursesPage() {
 
           <div className="catalog-grid">
             {filteredCourses.length === 0 ? (
-              <p className="card">No courses available yet.</p>
+              <p className="card">
+                {query || activeCategory
+                  ? "No courses found for your search."
+                  : "No courses available yet."}
+              </p>
             ) : (
               filteredCourses.map((course) => (
                 <CourseCard key={course.id || course.title} course={course} />
