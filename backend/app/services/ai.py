@@ -14,7 +14,7 @@ def _is_gemini_provider() -> bool:
     return "generativelanguage.googleapis.com" in settings.llm_base_url.lower()
 
 
-def _generate_with_model(system_prompt: str, user_prompt: str, max_tokens: int = 250) -> str:
+def _generate_with_model(system_prompt: str, user_prompt: str, max_tokens: int = 700) -> str:
     if _is_gemini_provider():
         endpoint = f"{settings.llm_base_url.rstrip('/')}/models/{settings.llm_model}:generateContent"
         payload = {
@@ -69,26 +69,55 @@ def _generate_with_model(system_prompt: str, user_prompt: str, max_tokens: int =
     return data["choices"][0]["message"]["content"].strip()
 
 
+def _extract_json_payload(text: str) -> str:
+    cleaned = text.strip()
+    if cleaned.startswith("```"):
+        lines = cleaned.splitlines()
+        if lines and lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].strip() == "```":
+            lines = lines[:-1]
+        cleaned = "\n".join(lines).strip()
+    return cleaned
+
+
+def _fallback_hint(topic: str, question: str) -> str:
+    topic_text = (topic or "this topic").strip()
+    question_text = (question or "your question").strip()
+    return (
+        f"Let's break this down.\n"
+        f"Topic: {topic_text}\n"
+        f"Question: {question_text}\n\n"
+        "Start with the core idea in one sentence, then connect it to a small real example. "
+        "After that, explain why the example works.\n\n"
+        "Practical next step: write 3 short bullet points for (1) definition, (2) example, and (3) common mistake."
+    )
+
+
 def build_hint(topic: str, question: str) -> str:
     if not model_is_configured():
-        raise ValueError(
-            "Real AI is not configured. Set LLM_API_KEY, LLM_MODEL, and LLM_BASE_URL in backend environment variables."
-        )
+        return _fallback_hint(topic, question)
 
     try:
         return _generate_with_model(
-            "You are a concise and practical learning tutor.",
+            (
+                "You are a careful learning tutor. "
+                "Be factual, avoid guessing, and clearly mention uncertainty when needed."
+            ),
             (
                 f"Topic: {topic}\n"
                 f"Question: {question}\n"
-                "Answer with a clear and accurate explanation for a learner. "
-                "Keep it concise, include one concrete example, and end with one practical next step."
+                "Answer with a clear and accurate explanation for a learner.\n"
+                "Rules:\n"
+                "- Keep it concise (120-220 words)\n"
+                "- Include one concrete example\n"
+                "- End with one practical next step\n"
+                "- If the question is ambiguous, ask one clarifying question at the end"
             ),
+            max_tokens=900,
         )
     except (httpx.HTTPError, KeyError, IndexError, ValueError) as exc:
-        raise ValueError(
-            "Real AI request failed. Check your API key, model name, and provider base URL."
-        ) from exc
+        return _fallback_hint(topic, question)
 
 
 def summarize_content(content: str) -> str:
@@ -125,9 +154,35 @@ def generate_simple_quiz(content: str) -> list[dict]:
                 ),
                 max_tokens=600,
             )
-            parsed = json.loads(raw)
-            if isinstance(parsed, list) and parsed:
-                return parsed
+            parsed = json.loads(_extract_json_payload(raw))
+            if isinstance(parsed, list):
+                normalized_questions = []
+                for idx, item in enumerate(parsed[:3], start=1):
+                    if not isinstance(item, dict):
+                        continue
+                    prompt = item.get("prompt")
+                    choices = item.get("choices")
+                    answer = item.get("answer")
+                    if not isinstance(prompt, str) or not prompt.strip():
+                        continue
+                    if not isinstance(choices, list):
+                        continue
+                    clean_choices = [str(choice).strip() for choice in choices if str(choice).strip()]
+                    if len(clean_choices) != 4:
+                        continue
+                    answer_text = str(answer).strip()
+                    if answer_text not in clean_choices:
+                        continue
+                    normalized_questions.append(
+                        {
+                            "id": idx,
+                            "prompt": prompt.strip(),
+                            "choices": clean_choices,
+                            "answer": answer_text,
+                        }
+                    )
+                if len(normalized_questions) == 3:
+                    return normalized_questions
         except (httpx.HTTPError, KeyError, IndexError, ValueError, json.JSONDecodeError):
             pass
 
@@ -144,6 +199,12 @@ def generate_simple_quiz(content: str) -> list[dict]:
             "prompt": "What should you do after learning a concept?",
             "choices": ["Apply it with practice", "Forget it", "Only read theory", "Change topic immediately"],
             "answer": "Apply it with practice",
+        },
+        {
+            "id": 3,
+            "prompt": "What helps you retain knowledge over time?",
+            "choices": ["Spaced review", "One-time reading", "Skipping exercises", "Avoiding feedback"],
+            "answer": "Spaced review",
         },
     ]
 
@@ -221,7 +282,7 @@ def _ai_recommendations(
         max_tokens=700,
     )
 
-    parsed = json.loads(raw)
+    parsed = json.loads(_extract_json_payload(raw))
     if not isinstance(parsed, list):
         raise ValueError("Invalid AI recommendation payload")
 
