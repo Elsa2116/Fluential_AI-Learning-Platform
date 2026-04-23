@@ -18,6 +18,12 @@ function normalizeError(error) {
     return new Error(error.response.data.detail);
   }
 
+  if (error?.code === "ERR_NETWORK" || error?.message === "Network Error") {
+    return new Error(
+      "Cannot reach backend server. Start backend on http://localhost:8000 and try again.",
+    );
+  }
+
   return new Error(error?.message || "Request failed");
 }
 

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   fetchChatMessages,
+  requestHint,
   sendChatFile,
   sendChatMessage,
 } from "@/lib/api-client";
@@ -13,6 +14,7 @@ export default function ChatRoomPanel() {
   const [text, setText] = useState("");
   const [file, setFile] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [aiReply, setAiReply] = useState("");
   const [status, setStatus] = useState("Messages will appear here.");
 
   useEffect(() => {
@@ -50,23 +52,41 @@ export default function ChatRoomPanel() {
   async function handleSend(event) {
     event.preventDefault();
     try {
+      const normalizedSenderId = Number(senderId) || 1;
       if (file) {
         await sendChatFile({
           room_id: roomId,
-          sender_id: Number(senderId),
+          sender_id: normalizedSenderId,
           file,
         });
       } else {
         await sendChatMessage({
           room_id: roomId,
-          sender_id: Number(senderId),
+          sender_id: normalizedSenderId,
           text,
         });
+
+        if (text.trim()) {
+          try {
+            const aiData = await requestHint("General", text.trim());
+            const hintText = aiData?.hint || "No AI response returned.";
+            setAiReply(hintText);
+            await sendChatMessage({
+              room_id: roomId,
+              sender_id: normalizedSenderId,
+              text: `AI: ${hintText}`,
+            });
+          } catch {
+            setAiReply(
+              "Could not get AI response. Check backend and LLM settings.",
+            );
+          }
+        }
       }
       setText("");
       setFile(null);
       await loadMessages();
-      setStatus("Message sent.");
+      setStatus("Message sent and saved to chat history.");
     } catch (error) {
       setStatus(error.message || "Failed to send message.");
     }
@@ -142,6 +162,14 @@ export default function ChatRoomPanel() {
               lastMessagePreview.file_name ||
               "Attachment"}
           </p>
+        ) : null}
+        {aiReply ? (
+          <div className="card" style={{ marginTop: 4 }}>
+            <strong>AI Answer</strong>
+            <p className="muted" style={{ marginBottom: 0 }}>
+              {aiReply}
+            </p>
+          </div>
         ) : null}
       </article>
 

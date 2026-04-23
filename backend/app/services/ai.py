@@ -107,18 +107,13 @@ def generate_simple_quiz(content: str) -> list[dict]:
     ]
 
 
-def recommend_courses_for_user(
+def _rule_based_recommendations(
     user_id: int,
     courses: list[Course],
     enrollments: list[Enrollment],
     progress_entries: list[LessonProgress],
 ) -> list[dict]:
     enrolled_course_ids = {en.course_id for en in enrollments if en.user_id == user_id}
-    completed_by_enrollment = {}
-    for progress in progress_entries:
-        completed_by_enrollment.setdefault(progress.enrollment_id, 0)
-        if progress.completed:
-            completed_by_enrollment[progress.enrollment_id] += 1
 
     ranking = []
     for course in courses:
@@ -138,3 +133,105 @@ def recommend_courses_for_user(
 
     ranking.sort(key=lambda item: item["score"], reverse=True)
     return ranking[:5]
+
+
+def _ai_recommendations(
+    user_id: int,
+    courses: list[Course],
+    enrollments: list[Enrollment],
+    progress_entries: list[LessonProgress],
+) -> list[dict]:
+    course_lookup = {course.id: course for course in courses}
+    enrolled_ids = {en.course_id for en in enrollments if en.user_id == user_id}
+    enrollment_ids_for_user = {en.id for en in enrollments if en.user_id == user_id}
+
+    completed_count_by_course: dict[int, int] = {}
+    for progress in progress_entries:
+        if progress.enrollment_id in enrollment_ids_for_user and progress.completed:
+            lesson = progress.lesson
+            if lesson and lesson.course_id:
+                completed_count_by_course[lesson.course_id] = (
+                    completed_count_by_course.get(lesson.course_id, 0) + 1
+                )
+
+    catalog_payload = [
+        {
+            "course_id": course.id,
+            "title": course.title,
+            "description": course.description[:220] if course.description else "",
+            "lesson_count": len(course.lessons),
+            "is_enrolled": course.id in enrolled_ids,
+            "completed_lessons": completed_count_by_course.get(course.id, 0),
+        }
+        for course in courses
+    ]
+
+    raw = _generate_with_model(
+        "You are an educational recommendation engine. Return only valid JSON.",
+        (
+            f"User id: {user_id}\n"
+            "Recommend up to 5 courses from the catalog. Prioritize practical next steps and avoid repetition.\n"
+            "Return ONLY a JSON array of objects with keys: course_id, reason, score.\n"
+            "- course_id must be from catalog\n"
+            "- reason must be one short sentence\n"
+            "- score must be integer 0-100\n\n"
+            f"Catalog: {json.dumps(catalog_payload)}"
+        ),
+        max_tokens=700,
+    )
+
+    parsed = json.loads(raw)
+    if not isinstance(parsed, list):
+        raise ValueError("Invalid AI recommendation payload")
+
+    normalized = []
+    seen_ids = set()
+    for item in parsed:
+        if not isinstance(item, dict):
+            continue
+
+        course_id = item.get("course_id")
+        if not isinstance(course_id, int) or course_id not in course_lookup or course_id in seen_ids:
+            continue
+
+        reason = item.get("reason")
+        if not isinstance(reason, str) or not reason.strip():
+            reason = "Recommended based on your learning progress."
+
+        score = item.get("score", 60)
+        try:
+            score = int(score)
+        except (TypeError, ValueError):
+            score = 60
+
+        score = max(0, min(100, score))
+        normalized.append(
+            {
+                "course_id": course_id,
+                "title": course_lookup[course_id].title,
+                "reason": reason.strip(),
+                "score": score,
+            }
+        )
+        seen_ids.add(course_id)
+
+    if not normalized:
+        raise ValueError("AI returned no usable recommendations")
+
+    normalized.sort(key=lambda item: item["score"], reverse=True)
+    return normalized[:5]
+
+
+def recommend_courses_for_user(
+    user_id: int,
+    courses: list[Course],
+    enrollments: list[Enrollment],
+    progress_entries: list[LessonProgress],
+) -> list[dict]:
+    if model_is_configured():
+        try:
+            return _ai_recommendations(user_id, courses, enrollments, progress_entries)
+        except (httpx.HTTPError, KeyError, IndexError, ValueError, json.JSONDecodeError):
+            pass
+
+    return _rule_based_recommendations(user_id, courses, enrollments, progress_entries)

@@ -48,8 +48,21 @@ export default function DashboardPage() {
         const normalized = Array.isArray(items)
           ? items
           : items.recommendations || [];
+        const top = normalized[0];
+        if (typeof top === "string") {
+          setTopRecommendation(top);
+          return;
+        }
+
+        if (top?.title || top?.reason) {
+          setTopRecommendation(
+            `${top.title || "Recommended course"} - ${top.reason || "Good next step for your learning."}`,
+          );
+          return;
+        }
+
         setTopRecommendation(
-          normalized[0] || "Complete one lesson and request a recommendation.",
+          "Complete one lesson and request a recommendation.",
         );
       })
       .catch(() =>

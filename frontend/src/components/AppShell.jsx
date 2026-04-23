@@ -180,16 +180,18 @@ export default function AppShell({ children }) {
                   >
                     LinkedIn
                   </a>
-                  <a href="https://t.me" target="_blank" rel="noreferrer">
+                  <a
+                    href="https://t.me/eprincesses"
+                    aria-label="Telegram @eprincesses"
+                  >
                     Telegram
                   </a>
                   <a href="https://github.com" target="_blank" rel="noreferrer">
                     GitHub
                   </a>
                   <a
-                    href="https://www.youtube.com"
-                    target="_blank"
-                    rel="noreferrer"
+                    href="https://www.youtube.com/@elsaalemayehu6946"
+                    aria-label="YouTube @elsaalemayehu6946"
                   >
                     YouTube
                   </a>
