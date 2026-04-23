@@ -27,6 +27,76 @@ function normalizeError(error) {
   return new Error(error?.message || "Request failed");
 }
 
+function frontendGeminiConfigured() {
+  return Boolean(process.env.NEXT_PUBLIC_GEMINI_API_KEY);
+}
+
+async function requestHintFromGemini(topic, question) {
+  if (!frontendGeminiConfigured()) {
+    throw new Error(
+      "Gemini frontend key is missing. Set NEXT_PUBLIC_GEMINI_API_KEY in frontend/.env.local and restart frontend.",
+    );
+  }
+
+  const baseUrl =
+    process.env.NEXT_PUBLIC_GEMINI_BASE_URL ||
+    "https://generativelanguage.googleapis.com/v1beta";
+  const model = process.env.NEXT_PUBLIC_GEMINI_MODEL || "gemini-1.5-flash";
+  const endpoint = `${baseUrl}/models/${model}:generateContent`;
+
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-goog-api-key": process.env.NEXT_PUBLIC_GEMINI_API_KEY,
+    },
+    body: JSON.stringify({
+      systemInstruction: {
+        parts: [
+          {
+            text: "You are a concise and practical learning tutor.",
+          },
+        ],
+      },
+      contents: [
+        {
+          role: "user",
+          parts: [
+            {
+              text:
+                `Topic: ${topic}\nQuestion: ${question}\n` +
+                "Answer clearly and accurately with one short example.",
+            },
+          ],
+        },
+      ],
+      generationConfig: {
+        temperature: 0.4,
+        maxOutputTokens: 300,
+      },
+    }),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    const details =
+      data?.error?.message ||
+      `Gemini request failed with status ${response.status}`;
+    throw new Error(details);
+  }
+
+  const text = data?.candidates?.[0]?.content?.parts
+    ?.map((part) => part?.text || "")
+    .join("")
+    .trim();
+
+  if (!text) {
+    throw new Error("Gemini returned an empty answer.");
+  }
+
+  return { hint: text };
+}
+
 export async function registerUser(payload) {
   try {
     const response = await api.post("/register", payload);
@@ -121,9 +191,21 @@ export async function requestHint(topic, question) {
   try {
     const response = await api.post("/chat", { topic, question });
     return response.data;
-  } catch {
-    const fallback = await api.post("/ai/hint", { topic, question });
-    return fallback.data;
+  } catch (primaryError) {
+    try {
+      const fallback = await api.post("/ai/hint", { topic, question });
+      return fallback.data;
+    } catch (fallbackError) {
+      const normalized = normalizeError(fallbackError || primaryError);
+      if (
+        normalized?.message?.includes("Real AI is not configured") ||
+        normalized?.message?.includes("status code 503")
+      ) {
+        return requestHintFromGemini(topic, question);
+      }
+
+      throw normalized;
+    }
   }
 }
 

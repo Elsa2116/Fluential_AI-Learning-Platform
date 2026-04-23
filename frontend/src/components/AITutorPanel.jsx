@@ -13,8 +13,11 @@ export default function AITutorPanel() {
     try {
       const data = await requestHint(topic, question);
       setHint(data.hint || "No hint returned.");
-    } catch {
-      setHint("Could not fetch hint. Check backend status and try again.");
+    } catch (error) {
+      setHint(
+        error.message ||
+          "Could not fetch hint. Check backend status and try again.",
+      );
     }
   }
 

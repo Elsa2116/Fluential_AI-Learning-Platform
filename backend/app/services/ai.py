@@ -10,44 +10,85 @@ def model_is_configured() -> bool:
     return bool(settings.llm_api_key and settings.llm_model and settings.llm_base_url)
 
 
+def _is_gemini_provider() -> bool:
+    return "generativelanguage.googleapis.com" in settings.llm_base_url.lower()
+
+
 def _generate_with_model(system_prompt: str, user_prompt: str, max_tokens: int = 250) -> str:
-    endpoint = f"{settings.llm_base_url.rstrip('/')}/chat/completions"
-    payload = {
-        "model": settings.llm_model,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ],
-        "temperature": 0.4,
-        "max_tokens": max_tokens,
-    }
-    headers = {"Authorization": f"Bearer {settings.llm_api_key}", "Content-Type": "application/json"}
+    if _is_gemini_provider():
+        endpoint = f"{settings.llm_base_url.rstrip('/')}/models/{settings.llm_model}:generateContent"
+        payload = {
+            "systemInstruction": {
+                "parts": [{"text": system_prompt}],
+            },
+            "contents": [
+                {
+                    "role": "user",
+                    "parts": [{"text": user_prompt}],
+                }
+            ],
+            "generationConfig": {
+                "temperature": 0.4,
+                "maxOutputTokens": max_tokens,
+            },
+        }
+        headers = {
+            "x-goog-api-key": settings.llm_api_key,
+            "Content-Type": "application/json",
+        }
+    else:
+        endpoint = f"{settings.llm_base_url.rstrip('/')}/chat/completions"
+        payload = {
+            "model": settings.llm_model,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            "temperature": 0.4,
+            "max_tokens": max_tokens,
+        }
+        headers = {"Authorization": f"Bearer {settings.llm_api_key}", "Content-Type": "application/json"}
+
     with httpx.Client(timeout=30.0) as client:
         response = client.post(endpoint, json=payload, headers=headers)
         response.raise_for_status()
         data = response.json()
 
+    if _is_gemini_provider():
+        candidates = data.get("candidates", [])
+        if not candidates:
+            raise ValueError("Gemini returned no candidates")
+        parts = candidates[0].get("content", {}).get("parts", [])
+        if not parts:
+            raise ValueError("Gemini returned empty content")
+        text = "".join(part.get("text", "") for part in parts).strip()
+        if not text:
+            raise ValueError("Gemini returned empty text")
+        return text
+
     return data["choices"][0]["message"]["content"].strip()
 
 
 def build_hint(topic: str, question: str) -> str:
-    if model_is_configured():
-        try:
-            return _generate_with_model(
-                "You are a concise and practical learning tutor.",
-                (
-                    f"Topic: {topic}\n"
-                    f"Question: {question}\n"
-                    "Give a short learning hint in 2-4 sentences with one clear next step."
-                ),
-            )
-        except (httpx.HTTPError, KeyError, IndexError, ValueError):
-            pass
+    if not model_is_configured():
+        raise ValueError(
+            "Real AI is not configured. Set LLM_API_KEY, LLM_MODEL, and LLM_BASE_URL in backend environment variables."
+        )
 
-    return (
-        f"Focus on '{topic}': break the problem into small steps, answer one step at a time, "
-        f"then validate your result against the question '{question[:90]}'."
-    )
+    try:
+        return _generate_with_model(
+            "You are a concise and practical learning tutor.",
+            (
+                f"Topic: {topic}\n"
+                f"Question: {question}\n"
+                "Answer with a clear and accurate explanation for a learner. "
+                "Keep it concise, include one concrete example, and end with one practical next step."
+            ),
+        )
+    except (httpx.HTTPError, KeyError, IndexError, ValueError) as exc:
+        raise ValueError(
+            "Real AI request failed. Check your API key, model name, and provider base URL."
+        ) from exc
 
 
 def summarize_content(content: str) -> str:

@@ -76,9 +76,10 @@ export default function ChatRoomPanel() {
               sender_id: normalizedSenderId,
               text: `AI: ${hintText}`,
             });
-          } catch {
+          } catch (error) {
             setAiReply(
-              "Could not get AI response. Check backend and LLM settings.",
+              error.message ||
+                "Could not get AI response. Check backend and LLM settings.",
             );
           }
         }

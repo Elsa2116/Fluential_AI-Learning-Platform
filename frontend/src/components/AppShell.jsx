@@ -204,7 +204,7 @@ export default function AppShell({ children }) {
             <span className="footer-badge">Secure sign-in</span>
             <span className="footer-badge">Role-based access</span>
             <span className="footer-badge">FastAPI-ready integration</span>
-            <span className="footer-badge">GitHub collaboration workflow</span>
+            <span className="footer-badge">Learning workflow integration</span>
           </div>
 
           <div className="footer-bottom">

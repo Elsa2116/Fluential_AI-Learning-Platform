@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
@@ -16,12 +16,18 @@ router = APIRouter(tags=["ai"])
 
 @router.post("/chat")
 def ai_chat(payload: HintRequest):
-    return {"hint": build_hint(payload.topic, payload.question)}
+    try:
+        return {"hint": build_hint(payload.topic, payload.question)}
+    except ValueError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
 @router.post("/ai/hint")
 def ai_hint(payload: HintRequest):
-    return {"hint": build_hint(payload.topic, payload.question)}
+    try:
+        return {"hint": build_hint(payload.topic, payload.question)}
+    except ValueError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
 @router.get("/recommend")
