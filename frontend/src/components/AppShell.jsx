@@ -28,19 +28,6 @@ export default function AppShell({ children }) {
     router.push("/login");
   }
 
-  function handleSearchSubmit(event) {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const query = String(formData.get("q") || "").trim();
-
-    if (!query) {
-      router.push("/courses");
-      return;
-    }
-
-    router.push(`/courses?q=${encodeURIComponent(query)}`);
-  }
-
   return (
     <>
       {!isAuthPage ? (
@@ -77,11 +64,7 @@ export default function AppShell({ children }) {
             </div>
           </details>
 
-          <form
-            className="nav-search"
-            action="/courses"
-            onSubmit={handleSearchSubmit}
-          >
+          <form className="nav-search" action="/courses">
             <span className="nav-search-icon">⌕</span>
             <input
               type="search"
@@ -138,11 +121,6 @@ export default function AppShell({ children }) {
                   </p>
                 </div>
               </div>
-
-              <p className="footer-brand-note muted">
-                Structured around your backend learning flow: authentication,
-                courses, chat, progress, and AI tools.
-              </p>
             </div>
 
             <div className="footer-grid">

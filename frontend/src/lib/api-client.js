@@ -38,85 +38,63 @@ async function requestHintFromGemini(topic, question) {
     );
   }
 
-  const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
   const baseUrl =
     process.env.NEXT_PUBLIC_GEMINI_BASE_URL ||
     "https://generativelanguage.googleapis.com/v1beta";
-  const preferredModel =
-    process.env.NEXT_PUBLIC_GEMINI_MODEL || "gemini-2.0-flash";
-  const candidateModels = [
-    preferredModel,
-    "gemini-2.0-flash",
-    "gemini-1.5-flash",
-    "gemini-1.5-flash-latest",
-  ].filter((model, index, all) => all.indexOf(model) === index);
+  const model = process.env.NEXT_PUBLIC_GEMINI_MODEL || "gemini-1.5-flash";
+  const endpoint = `${baseUrl}/models/${model}:generateContent`;
 
-  const payload = {
-    systemInstruction: {
-      parts: [
-        {
-          text: "You are a concise and practical learning tutor.",
-        },
-      ],
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-goog-api-key": process.env.NEXT_PUBLIC_GEMINI_API_KEY,
     },
-    contents: [
-      {
-        role: "user",
+    body: JSON.stringify({
+      systemInstruction: {
         parts: [
           {
-            text:
-              `Topic: ${topic}\nQuestion: ${question}\n` +
-              "Answer clearly and accurately with one short example.",
+            text: "You are a concise and practical learning tutor.",
           },
         ],
       },
-    ],
-    generationConfig: {
-      temperature: 0.4,
-      maxOutputTokens: 300,
-    },
-  };
-
-  let lastErrorMessage = "Gemini request failed.";
-  for (const model of candidateModels) {
-    const endpoint = `${baseUrl}/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+      contents: [
+        {
+          role: "user",
+          parts: [
+            {
+              text:
+                `Topic: ${topic}\nQuestion: ${question}\n` +
+                "Answer clearly and accurately with one short example.",
+            },
+          ],
+        },
+      ],
+      generationConfig: {
+        temperature: 0.4,
+        maxOutputTokens: 300,
       },
-      body: JSON.stringify(payload),
-    });
+    }),
+  });
 
-    const data = await response.json();
-    if (response.ok) {
-      const text = data?.candidates?.[0]?.content?.parts
-        ?.map((part) => part?.text || "")
-        .join("")
-        .trim();
-
-      if (!text) {
-        throw new Error("Gemini returned an empty answer.");
-      }
-
-      return { hint: text };
-    }
-
-    lastErrorMessage =
+  const data = await response.json();
+  if (!response.ok) {
+    const details =
       data?.error?.message ||
       `Gemini request failed with status ${response.status}`;
-
-    const notFound =
-      response.status === 404 ||
-      lastErrorMessage.toLowerCase().includes("not found") ||
-      lastErrorMessage.toLowerCase().includes("not supported");
-
-    if (!notFound) {
-      break;
-    }
+    throw new Error(details);
   }
 
-  throw new Error(lastErrorMessage);
+  const text = data?.candidates?.[0]?.content?.parts
+    ?.map((part) => part?.text || "")
+    .join("")
+    .trim();
+
+  if (!text) {
+    throw new Error("Gemini returned an empty answer.");
+  }
+
+  return { hint: text };
 }
 
 export async function registerUser(payload) {
