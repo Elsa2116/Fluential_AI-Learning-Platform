@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import CourseCard from "@/components/CourseCard";
@@ -73,6 +73,14 @@ const CATEGORY_CONFIG = {
 const CATEGORY_KEYS = Object.keys(CATEGORY_CONFIG);
 
 export default function CoursesPage() {
+  return (
+    <Suspense fallback={<section className="catalog-shell grid" style={{ gap: 18 }} />}>
+      <CoursesPageContent />
+    </Suspense>
+  );
+}
+
+function CoursesPageContent() {
   const searchParams = useSearchParams();
   const [courses, setCourses] = useState([]);
 
