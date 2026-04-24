@@ -74,7 +74,9 @@ const CATEGORY_KEYS = Object.keys(CATEGORY_CONFIG);
 
 export default function CoursesPage() {
   return (
-    <Suspense fallback={<section className="catalog-shell grid" style={{ gap: 18 }} />}>
+    <Suspense
+      fallback={<section className="catalog-shell grid" style={{ gap: 18 }} />}
+    >
       <CoursesPageContent />
     </Suspense>
   );
