@@ -12,6 +12,9 @@ node_modules/
 frontend/.next/
 frontend/dist/
 frontend/build/
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.production.local
 
 # OS / Editor
 .DS_Store
